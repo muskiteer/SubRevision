@@ -2,13 +2,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #2a2a4a;
-  --foreground: #c0c0ff;
+  /* Midnight Study Palette */
+  --primary: #00d9ff;
+  --primary-hover: #00b8d4;
+  --primary-light: #4dffff;
+  --background: #0f1419;
+  --surface: #1a1f2e;
+  --surface-elevated: #242b3d;
+  --border: #2d3748;
+  --border-light: #3d4758;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
+  color: var(--text-primary);
   font-family: 'Courier New', monospace;
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
@@ -25,21 +35,21 @@ body {
 
 /* Pixel Container - Retro box style */
 .pixel-container {
-  border: 4px solid #4a4a7a;
+  border: 4px solid var(--border);
   box-shadow: 
-    0 0 0 2px #2a2a4a,
-    0 0 0 4px #4a4a7a,
-    8px 8px 0 0 rgba(0, 0, 0, 0.3);
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--border),
+    8px 8px 0 0 rgba(0, 0, 0, 0.4);
   border-radius: 0;
 }
 
 /* Pixel Button */
 .pixel-btn {
-  border: 3px solid #000;
+  border: 3px solid rgba(0, 0, 0, 0.5);
   box-shadow: 
     inset -2px -2px 0 0 rgba(0, 0, 0, 0.3),
-    inset 2px 2px 0 0 rgba(255, 255, 255, 0.3),
-    4px 4px 0 0 rgba(0, 0, 0, 0.3);
+    inset 2px 2px 0 0 rgba(255, 255, 255, 0.15),
+    4px 4px 0 0 rgba(0, 0, 0, 0.4);
   transition: all 0.1s ease;
   cursor: pointer;
   font-family: 'Courier New', monospace;
@@ -51,31 +61,31 @@ body {
   transform: translate(1px, 1px);
   box-shadow: 
     inset -2px -2px 0 0 rgba(0, 0, 0, 0.3),
-    inset 2px 2px 0 0 rgba(255, 255, 255, 0.3),
-    3px 3px 0 0 rgba(0, 0, 0, 0.3);
+    inset 2px 2px 0 0 rgba(255, 255, 255, 0.15),
+    3px 3px 0 0 rgba(0, 0, 0, 0.4);
 }
 
 .pixel-btn:active {
   transform: translate(2px, 2px);
   box-shadow: 
     inset -1px -1px 0 0 rgba(0, 0, 0, 0.3),
-    inset 1px 1px 0 0 rgba(255, 255, 255, 0.3),
-    2px 2px 0 0 rgba(0, 0, 0, 0.3);
+    inset 1px 1px 0 0 rgba(255, 255, 255, 0.15),
+    2px 2px 0 0 rgba(0, 0, 0, 0.4);
 }
 
 /* Pixel Box */
 .pixel-box {
-  border: 3px solid #4a4a7a;
+  border: 3px solid var(--border);
   box-shadow: 
-    inset -2px -2px 0 0 rgba(0, 0, 0, 0.2),
-    inset 2px 2px 0 0 rgba(255, 255, 255, 0.1);
+    inset -2px -2px 0 0 rgba(0, 0, 0, 0.3),
+    inset 2px 2px 0 0 rgba(255, 255, 255, 0.05);
 }
 
 /* Pixel Input */
 .pixel-input {
-  border: 3px solid #4a4a7a;
+  border: 3px solid var(--border);
   box-shadow: 
-    inset -2px -2px 0 0 rgba(255, 255, 255, 0.1),
+    inset -2px -2px 0 0 rgba(255, 255, 255, 0.05),
     inset 2px 2px 0 0 rgba(0, 0, 0, 0.3);
   outline: none;
   font-family: 'Courier New', monospace;
@@ -83,15 +93,15 @@ body {
 }
 
 .pixel-input:focus {
-  border-color: #ffd700;
+  border-color: var(--primary);
   box-shadow: 
-    inset -2px -2px 0 0 rgba(255, 215, 0, 0.2),
+    inset -2px -2px 0 0 rgba(0, 217, 255, 0.1),
     inset 2px 2px 0 0 rgba(0, 0, 0, 0.3),
-    0 0 0 3px rgba(255, 215, 0, 0.3);
+    0 0 0 3px rgba(0, 217, 255, 0.2);
 }
 
 .pixel-input::placeholder {
-  color: #6a6a9a;
+  color: var(--text-muted);
 }
 
 /* Custom scrollbar for pixel style */
@@ -100,16 +110,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #2a2a4a;
-  border: 2px solid #4a4a7a;
+  background: var(--background);
+  border: 2px solid var(--border);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #ffd700;
-  border: 2px solid #000;
-  box-shadow: inset 0 0 0 2px #ffed4e;
+  background: var(--primary);
+  border: 2px solid var(--background);
+  box-shadow: inset 0 0 0 2px var(--primary-light);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #ffed4e;
+  background: var(--primary-hover);
 }

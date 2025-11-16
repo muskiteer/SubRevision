@@ -1,16 +1,8 @@
 'use client';
-
 import { useState } from 'react';
-
-const API_BASE = 'http://localhost:8000';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('upload');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState<string>('');
-  
-  // Form states
   const [file, setFile] = useState<File | null>(null);
   const [query, setQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,6 +10,32 @@ export default function Home() {
   const [difficulty, setDifficulty] = useState('medium');
   const [numCards, setNumCards] = useState(10);
   const [studyDays, setStudyDays] = useState(7);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState<any>(null);
+  const [showAnswers, setShowAnswers] = useState<{[key: number]: boolean}>({});
+  const [flippedCards, setFlippedCards] = useState<{[key: number]: boolean}>({});
+
+  const API_BASE = 'http://localhost:8000';
+
+  // Toggle answer visibility for quiz questions
+  const toggleAnswer = (index: number) => {
+    setShowAnswers(prev => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  // Flip flashcard
+  const flipCard = (index: number) => {
+    setFlippedCards(prev => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  // Reset interactive states when switching tabs
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    setShowAnswers({});
+    setFlippedCards({});
+    setResult(null);
+    setError('');
+  };
 
   // API functions
   const uploadPDF = async () => {
@@ -248,11 +266,11 @@ export default function Home() {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`pixel-btn px-4 py-2 font-bold text-sm transition-all ${
+              onClick={() => handleTabChange(tab.id)}
+              className={`pixel-btn px-4 py-2 font-bold ${
                 activeTab === tab.id
-                  ? 'bg-[#00d9ff] text-[#0f1419] scale-105'
-                  : 'bg-[#242b3d] text-[#e2e8f0] hover:bg-[#2d3748]'
+                  ? 'bg-[#00d9ff] text-[#0f1419]'
+                  : 'bg-[#2d3748] text-[#e2e8f0] hover:bg-[#374151]'
               }`}
             >
               {tab.icon} {tab.label}
@@ -328,8 +346,13 @@ export default function Home() {
             </button>
             {result && (
               <div className="pixel-box bg-[#0f1419] p-4">
-                <h3 className="text-[#00d9ff] font-bold mb-2">Answer:</h3>
-                <p className="text-[#e2e8f0] whitespace-pre-wrap">{result.answer}</p>
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">💬</span>
+                  <div className="flex-1">
+                    <div className="text-[#00d9ff] font-bold mb-2">Answer:</div>
+                    <div className="text-[#e2e8f0] whitespace-pre-wrap leading-relaxed">{result.answer}</div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -355,10 +378,14 @@ export default function Home() {
               🔎 Search
             </button>
             {result?.results && (
-              <div className="space-y-2">
+              <div className="space-y-3">
+                <h3 className="text-[#00d9ff] font-bold">🔍 Search Results ({result.results.length})</h3>
                 {result.results.map((r: any, i: number) => (
-                  <div key={i} className="pixel-box bg-[#0f1419] p-4">
-                    <p className="text-[#e2e8f0]">{r.text}</p>
+                  <div key={i} className="pixel-box bg-[#0f1419] p-4 border-l-4 border-[#00d9ff]">
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#00d9ff] font-bold">#{i + 1}</span>
+                      <p className="text-[#e2e8f0] flex-1">{r.text}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -385,7 +412,13 @@ export default function Home() {
             </div>
             {result?.summary && (
               <div className="pixel-box bg-[#0f1419] p-4">
-                <pre className="text-[#e2e8f0] whitespace-pre-wrap">{result.summary}</pre>
+                <div className="flex items-start gap-3">
+                  <span className="text-3xl">📄</span>
+                  <div className="flex-1">
+                    <div className="text-[#00d9ff] font-bold text-lg mb-3">Summary</div>
+                    <div className="text-[#e2e8f0] whitespace-pre-wrap leading-relaxed">{result.summary}</div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -429,8 +462,57 @@ export default function Home() {
               </button>
             </div>
             {result?.quiz && (
-              <div className="pixel-box bg-[#0f1419] p-4">
-                <pre className="text-[#e2e8f0] text-sm whitespace-pre-wrap overflow-auto">{result.quiz}</pre>
+              <div className="pixel-box bg-[#0f1419] p-4 space-y-4">
+                <h3 className="text-lg font-bold text-[#00d9ff] mb-4">📝 Quiz Questions</h3>
+                {(() => {
+                  try {
+                    // Try to parse quiz as JSON
+                    const quizData = typeof result.quiz === 'string' ? JSON.parse(result.quiz) : result.quiz;
+                    const questions = quizData.questions || quizData;
+                    
+                    if (Array.isArray(questions)) {
+                      return questions.map((q: any, idx: number) => (
+                        <div key={idx} className="bg-[#1a1f2e] border-4 border-[#2d3748] p-4 space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-[#00d9ff] font-bold">{idx + 1}.</span>
+                            <p className="text-[#e2e8f0] flex-1">{q.question}</p>
+                          </div>
+                          
+                          {q.options && (
+                            <div className="ml-6 space-y-1">
+                              {q.options.map((opt: string, optIdx: number) => (
+                                <div key={optIdx} className="text-[#94a3b8]">
+                                  {String.fromCharCode(65 + optIdx)}) {opt}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          <button
+                            onClick={() => toggleAnswer(idx)}
+                            className="ml-6 mt-2 pixel-btn bg-[#2d3748] text-[#00d9ff] px-4 py-1 text-sm hover:bg-[#374151]"
+                          >
+                            {showAnswers[idx] ? '🔽 Hide Answer' : '▶️ Show Answer'}
+                          </button>
+                          
+                          {showAnswers[idx] && (
+                            <div className="ml-6 mt-2 bg-[#0f1419] border-2 border-[#00d9ff] p-3 animate-fadeIn">
+                              <div className="text-[#00ff88] font-bold">✓ Answer: {q.answer || q.correct_answer}</div>
+                              {q.explanation && (
+                                <div className="text-[#e2e8f0] mt-2 text-sm">
+                                  💡 {q.explanation}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ));
+                    }
+                  } catch (e) {
+                    // Fallback to plain text display
+                    return <pre className="text-[#e2e8f0] text-sm whitespace-pre-wrap">{result.quiz}</pre>;
+                  }
+                })()}
               </div>
             )}
           </div>
@@ -463,7 +545,61 @@ export default function Home() {
             </div>
             {result?.flashcards && (
               <div className="pixel-box bg-[#0f1419] p-4">
-                <pre className="text-[#e2e8f0] text-sm whitespace-pre-wrap overflow-auto">{result.flashcards}</pre>
+                <h3 className="text-lg font-bold text-[#00d9ff] mb-4">🃏 Flashcards (Click to Flip)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(() => {
+                    try {
+                      const flashcardsData = typeof result.flashcards === 'string' ? JSON.parse(result.flashcards) : result.flashcards;
+                      const cards = flashcardsData.flashcards || flashcardsData;
+                      
+                      if (Array.isArray(cards)) {
+                        return cards.map((card: any, idx: number) => (
+                          <div
+                            key={idx}
+                            onClick={() => flipCard(idx)}
+                            className="relative h-48 cursor-pointer perspective"
+                            style={{ perspective: '1000px' }}
+                          >
+                            <div
+                              className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${
+                                flippedCards[idx] ? 'rotate-y-180' : ''
+                              }`}
+                              style={{
+                                transformStyle: 'preserve-3d',
+                                transform: flippedCards[idx] ? 'rotateY(180deg)' : 'rotateY(0deg)'
+                              }}
+                            >
+                              {/* Front */}
+                              <div
+                                className="absolute w-full h-full bg-[#1a1f2e] border-4 border-[#00d9ff] p-4 flex flex-col items-center justify-center backface-hidden"
+                                style={{ backfaceVisibility: 'hidden' }}
+                              >
+                                <div className="text-xs text-[#00d9ff] mb-2">Card {idx + 1}</div>
+                                <div className="text-[#e2e8f0] text-center font-bold">{card.front || card.question}</div>
+                                <div className="text-xs text-[#94a3b8] mt-4">👆 Click to flip</div>
+                              </div>
+                              
+                              {/* Back */}
+                              <div
+                                className="absolute w-full h-full bg-[#2d3748] border-4 border-[#00ff88] p-4 flex flex-col items-center justify-center backface-hidden"
+                                style={{
+                                  backfaceVisibility: 'hidden',
+                                  transform: 'rotateY(180deg)'
+                                }}
+                              >
+                                <div className="text-xs text-[#00ff88] mb-2">Answer</div>
+                                <div className="text-[#e2e8f0] text-center">{card.back || card.answer}</div>
+                                <div className="text-xs text-[#94a3b8] mt-4">👆 Click to flip back</div>
+                              </div>
+                            </div>
+                          </div>
+                        ));
+                      }
+                    } catch (e) {
+                      return <pre className="text-[#e2e8f0] text-sm whitespace-pre-wrap">{result.flashcards}</pre>;
+                    }
+                  })()}
+                </div>
               </div>
             )}
           </div>
@@ -488,7 +624,48 @@ export default function Home() {
             </div>
             {result?.mindmap && (
               <div className="pixel-box bg-[#0f1419] p-4">
-                <pre className="text-[#e2e8f0] text-sm whitespace-pre-wrap overflow-auto">{result.mindmap}</pre>
+                <h3 className="text-lg font-bold text-[#00d9ff] mb-4">🧠 Mind Map</h3>
+                {(() => {
+                  try {
+                    const mindmapData = typeof result.mindmap === 'string' ? JSON.parse(result.mindmap) : result.mindmap;
+                    
+                    const renderNode = (node: any, level: number = 0): any => {
+                      const indent = level * 24;
+                      const colors = ['#00d9ff', '#00ff88', '#ff6b9d', '#ffd93d'];
+                      const color = colors[level % colors.length];
+                      
+                      return (
+                        <div key={Math.random()} style={{ marginLeft: `${indent}px` }} className="my-2">
+                          <div className="flex items-center gap-2">
+                            <span style={{ color }} className="text-xl">
+                              {level === 0 ? '🌟' : level === 1 ? '📌' : '▸'}
+                            </span>
+                            <span className="text-[#e2e8f0] font-bold" style={{ color }}>
+                              {node.title || node.name || node.topic}
+                            </span>
+                          </div>
+                          {node.description && (
+                            <div className="ml-8 text-[#94a3b8] text-sm mt-1">{node.description}</div>
+                          )}
+                          {node.children && Array.isArray(node.children) && (
+                            <div className="border-l-2 border-[#2d3748] ml-4 pl-2">
+                              {node.children.map((child: any) => renderNode(child, level + 1))}
+                            </div>
+                          )}
+                          {node.subtopics && Array.isArray(node.subtopics) && (
+                            <div className="border-l-2 border-[#2d3748] ml-4 pl-2">
+                              {node.subtopics.map((child: any) => renderNode(child, level + 1))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    };
+                    
+                    return <div className="space-y-2">{renderNode(mindmapData)}</div>;
+                  } catch (e) {
+                    return <pre className="text-[#e2e8f0] text-sm whitespace-pre-wrap">{result.mindmap}</pre>;
+                  }
+                })()}
               </div>
             )}
           </div>
@@ -521,7 +698,70 @@ export default function Home() {
             </div>
             {result?.study_plan && (
               <div className="pixel-box bg-[#0f1419] p-4">
-                <pre className="text-[#e2e8f0] text-sm whitespace-pre-wrap overflow-auto">{result.study_plan}</pre>
+                <h3 className="text-lg font-bold text-[#00d9ff] mb-4">📅 Study Plan</h3>
+                {(() => {
+                  try {
+                    const planData = typeof result.study_plan === 'string' ? JSON.parse(result.study_plan) : result.study_plan;
+                    const days = planData.days || planData.plan || planData;
+                    
+                    if (Array.isArray(days)) {
+                      return (
+                        <div className="space-y-4">
+                          {days.map((day: any, idx: number) => (
+                            <div key={idx} className="bg-[#1a1f2e] border-4 border-[#2d3748] p-4">
+                              <div className="flex items-center gap-3 mb-3">
+                                <span className="text-2xl">📆</span>
+                                <h4 className="text-[#00d9ff] font-bold text-lg">
+                                  Day {day.day || idx + 1}
+                                </h4>
+                              </div>
+                              
+                              {day.title && (
+                                <div className="text-[#e2e8f0] font-bold mb-2">{day.title}</div>
+                              )}
+                              
+                              {day.topics && Array.isArray(day.topics) && (
+                                <div className="space-y-2">
+                                  <div className="text-[#00ff88] text-sm font-bold">Topics:</div>
+                                  <ul className="list-none space-y-1 ml-4">
+                                    {day.topics.map((topic: string, tIdx: number) => (
+                                      <li key={tIdx} className="text-[#e2e8f0] flex items-start gap-2">
+                                        <span className="text-[#00d9ff]">▸</span>
+                                        {topic}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              
+                              {day.tasks && Array.isArray(day.tasks) && (
+                                <div className="space-y-2 mt-3">
+                                  <div className="text-[#ffd93d] text-sm font-bold">Tasks:</div>
+                                  <ul className="list-none space-y-1 ml-4">
+                                    {day.tasks.map((task: string, tIdx: number) => (
+                                      <li key={tIdx} className="text-[#94a3b8] flex items-start gap-2">
+                                        <span className="text-[#ffd93d]">☑</span>
+                                        {task}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              
+                              {day.duration && (
+                                <div className="mt-3 text-[#94a3b8] text-sm">
+                                  ⏱️ Duration: {day.duration}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                  } catch (e) {
+                    return <pre className="text-[#e2e8f0] text-sm whitespace-pre-wrap">{result.study_plan}</pre>;
+                  }
+                })()}
               </div>
             )}
           </div>

@@ -272,18 +272,14 @@ async def generating_quiz(num_questions: int = 5, difficulty: str = "medium"):
 Document:
 {text_for_quiz}
 
-For each question, provide:
-1. Question text
-2. Four options (A, B, C, D)
-3. Correct answer (letter)
-4. Brief explanation
+IMPORTANT: Return ONLY a valid JSON array, nothing else. No markdown, no explanations.
 
-Format as JSON array:
+Format:
 [
   {{
     "question": "Question text?",
-    "options": {{"A": "option1", "B": "option2", "C": "option3", "D": "option4"}},
-    "correct_answer": "A",
+    "options": ["option1", "option2", "option3", "option4"],
+    "answer": "option1",
     "explanation": "Why this is correct"
   }}
 ]"""
@@ -295,12 +291,32 @@ Format as JSON array:
             max_tokens=2048
         )
         
-        return {
-            "status": "success",
-            "num_questions": num_questions,
-            "difficulty": difficulty,
-            "quiz": response.choices[0].message.content
-        }
+        # Parse the JSON response
+        import json
+        import re
+        quiz_content = response.choices[0].message.content
+        
+        # Extract JSON from markdown code blocks if present
+        json_match = re.search(r'```(?:json)?\s*(\[.*?\])\s*```', quiz_content, re.DOTALL)
+        if json_match:
+            quiz_content = json_match.group(1)
+        
+        try:
+            quiz_data = json.loads(quiz_content)
+            return {
+                "status": "success",
+                "num_questions": num_questions,
+                "difficulty": difficulty,
+                "quiz": {"questions": quiz_data}
+            }
+        except:
+            # Fallback to raw text if parsing fails
+            return {
+                "status": "success",
+                "num_questions": num_questions,
+                "difficulty": difficulty,
+                "quiz": quiz_content
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating quiz: {str(e)}")
 
@@ -325,12 +341,13 @@ async def generating_flashcards(num_cards: int = 10):
 Document:
 {text_for_cards}
 
-Format as JSON array:
+IMPORTANT: Return ONLY a valid JSON array, nothing else. No markdown, no explanations.
+
+Format:
 [
   {{
     "front": "Question or term",
-    "back": "Answer or definition",
-    "category": "Topic category"
+    "back": "Answer or definition"
   }}
 ]"""
         
@@ -341,11 +358,30 @@ Format as JSON array:
             max_tokens=2048
         )
         
-        return {
-            "status": "success",
-            "num_cards": num_cards,
-            "flashcards": response.choices[0].message.content
-        }
+        # Parse the JSON response
+        import json
+        import re
+        flashcards_content = response.choices[0].message.content
+        
+        # Extract JSON from markdown code blocks if present
+        json_match = re.search(r'```(?:json)?\s*(\[.*?\])\s*```', flashcards_content, re.DOTALL)
+        if json_match:
+            flashcards_content = json_match.group(1)
+        
+        try:
+            flashcards_data = json.loads(flashcards_content)
+            return {
+                "status": "success",
+                "num_cards": num_cards,
+                "flashcards": {"flashcards": flashcards_data}
+            }
+        except:
+            # Fallback to raw text if parsing fails
+            return {
+                "status": "success",
+                "num_cards": num_cards,
+                "flashcards": flashcards_content
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating flashcards: {str(e)}")
 
@@ -367,17 +403,25 @@ async def generating_mindmap():
 Document:
 {text_for_mindmap}
 
-Format as JSON:
+IMPORTANT: Return ONLY a valid JSON object, nothing else. No markdown, no explanations.
+
+Format:
 {{
-  "central_topic": "Main topic",
-  "branches": [
+  "title": "Main Topic",
+  "children": [
     {{
-      "name": "Branch 1",
-      "sub_branches": ["sub1", "sub2", "sub3"]
+      "title": "Subtopic 1",
+      "description": "Brief description",
+      "children": [
+        {{"title": "Detail 1"}},
+        {{"title": "Detail 2"}}
+      ]
     }},
     {{
-      "name": "Branch 2",
-      "sub_branches": ["sub1", "sub2"]
+      "title": "Subtopic 2",
+      "children": [
+        {{"title": "Detail 3"}}
+      ]
     }}
   ]
 }}"""
@@ -389,10 +433,28 @@ Format as JSON:
             max_tokens=1536
         )
         
-        return {
-            "status": "success",
-            "mindmap": response.choices[0].message.content
-        }
+        # Parse the JSON response
+        import json
+        import re
+        mindmap_content = response.choices[0].message.content
+        
+        # Extract JSON from markdown code blocks if present
+        json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', mindmap_content, re.DOTALL)
+        if json_match:
+            mindmap_content = json_match.group(1)
+        
+        try:
+            mindmap_data = json.loads(mindmap_content)
+            return {
+                "status": "success",
+                "mindmap": mindmap_data
+            }
+        except:
+            # Fallback to raw text if parsing fails
+            return {
+                "status": "success",
+                "mindmap": mindmap_content
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating mindmap: {str(e)}")
 
@@ -417,18 +479,19 @@ async def generating_studyplan(duration_days: int = 7):
 Document:
 {text_for_plan}
 
-Format as JSON:
+IMPORTANT: Return ONLY a valid JSON object, nothing else. No markdown, no explanations.
+
+Format:
 {{
-  "total_days": {duration_days},
-  "daily_plan": [
+  "days": [
     {{
       "day": 1,
+      "title": "Introduction & Basics",
       "topics": ["Topic 1", "Topic 2"],
       "tasks": ["Read section X", "Practice Y"],
-      "estimated_time": "2 hours"
+      "duration": "2 hours"
     }}
-  ],
-  "tips": ["Study tip 1", "Study tip 2"]
+  ]
 }}"""
         
         response = groq_client.chat.completions.create(
@@ -438,10 +501,32 @@ Format as JSON:
             max_tokens=2048
         )
         
-        return {
-            "status": "success",
-            "duration_days": duration_days,
-            "study_plan": response.choices[0].message.content
-        }
+        # Parse the JSON response
+        import json
+        import re
+        plan_content = response.choices[0].message.content
+        
+        # Extract JSON from markdown code blocks if present
+        json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', plan_content, re.DOTALL)
+        if json_match:
+            plan_content = json_match.group(1)
+        
+        try:
+            plan_data = json.loads(plan_content)
+            # Normalize the structure to use "days" key
+            if "daily_plan" in plan_data:
+                plan_data["days"] = plan_data["daily_plan"]
+            return {
+                "status": "success",
+                "duration_days": duration_days,
+                "study_plan": plan_data
+            }
+        except:
+            # Fallback to raw text if parsing fails
+            return {
+                "status": "success",
+                "duration_days": duration_days,
+                "study_plan": plan_content
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating study plan: {str(e)}")
